@@ -79,7 +79,7 @@ async def create_user(request: LoginRequest):
 
 @app.post("/video/chunk")
 async def upload_chunk(
-    chunk: UploadFile = Form(...),
+    chunk: UploadFile,
     chunk_index: int = Form(...),
     session_id: str = Form(...)
 ):
