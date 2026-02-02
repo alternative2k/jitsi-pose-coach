@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  prosody:
+    environment:
+      - XMPP_DOMAIN=meet.jit.si
+      - XMPP_AUTH_DOMAIN=auth.meet.jit.si
+      - XMPP_MUC_DOMAIN=muc.meet.jit.si
+      - XMPP_INTERNAL_MUC_DOMAIN=internal-muc.meet.jit.si
+      - JICOFO_COMPONENT_SECRET=jitsi
+      - JVB_COMPONENT_SECRET=jitsi
+      - JVB_AUTH_USER=jvb
+      - JVB_AUTH_PASSWORD=jitsi
+      - TZ=UTC
+
+  jicofo:
+    environment:
+      - XMPP_SERVER=localhost
+      - XMPP_DOMAIN=meet.jit.si
+      - XMPP_AUTH_DOMAIN=auth.meet.jit.si
+      - XMPP_INTERNAL_MUC_DOMAIN=internal-muc.meet.jit.si
+      - XMPP_MUC_DOMAIN=muc.meet.jit.si
+      - XMPP_BOSH_URL=http://xmpp.meet.jit.si:5280/http-bind
+      - TZ=UTC
+
+  jvb:
+    environment:
+      - XMPP_SERVER=localhost
+      - XMPP_DOMAIN=meet.jit.si
+      - XMPP_AUTH_DOMAIN=auth.meet.jit.si
+      - XMPP_INTERNAL_MUC_DOMAIN=internal-muc.meet.jit.si
+      - JVB_STUN_SERVERS=stun.l.google.com:19302
+      - JVB_PORT=10000
+      - JVB_AUTH_USER=jvb
+      - JVB_AUTH_PASSWORD=jitsi
+      - TZ=UTC
+    ports:
+      - "10000:10000/udp"
