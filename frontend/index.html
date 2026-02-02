@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Movement Analysis Tool</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Login Page -->
+    <div id="loginPage" class="hidden">
+        <div class="min-h-screen flex items-center justify-center">
+            <div class="bg-gray-800 p-8 rounded-lg shadow-xl max-w-md w-full">
+                <h1 class="text-2xl font-bold mb-6 text-center">Movement Analysis Tool</h1>
+                <form id="loginForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Username</label>
+                        <input type="text" id="username" class="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Password</label>
+                        <input type="password" id="password" class="w-full p-2 bg-gray-700 rounded border border-gray-600 focus:border-blue-500 outline-none">
+                    </div>
+                    <p id="loginError" class="text-red-500 text-sm hidden"></p>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded font-medium">Login</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard -->
+    <div id="dashboardPage" class="hidden">
+        <div class="container mx-auto p-4">
+            <header class="flex justify-between items-center mb-6">
+                <h1 class="text-xl font-bold">Movement Analysis Tool</h1>
+                <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">Logout</button>
+            </header>
+
+            <!-- Start Screen -->
+            <div id="startScreen" class="text-center py-20">
+                <button id="startBtn" class="bg-green-600 hover:bg-green-700 px-8 py-4 rounded-lg text-xl font-bold">Start Recording</button>
+            </div>
+
+            <!-- Recording Screen -->
+            <div id="recordingScreen" class="hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+                    <!-- Preview Area -->
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="font-bold">Camera Preview</h2>
+                            <button id="togglePreviewBtn" class="bg-gray-600 hover:bg-gray-700 px-3 py-1 rounded text-sm">Hide Preview</button>
+                        </div>
+                        <div id="videoContainer" class="relative bg-black rounded overflow-hidden aspect-video">
+                            <video id="videoPreview" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                            <canvas id="skeletonCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+                        </div>
+                        <div id="recordingIndicator" class="hidden mt-2 flex items-center text-red-500">
+                            <span class="animate-pulse mr-2">●</span>
+                            Recording...
+                        </div>
+                    </div>
+
+                    <!-- Skeleton & Data Area -->
+                    <div class="bg-gray-800 rounded-lg p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <h2 class="font-bold">Skeleton & Movement Data</h2>
+                            <button id="toggleSkeletonBtn" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-sm">Toggle View</button>
+                        </div>
+                        <div id="skeletonContainer" class="relative bg-black rounded overflow-hidden aspect-video mb-2">
+                            <video id="skeletonVideo" autoplay muted playsinline class="w-full h-full object-cover"></video>
+                            <canvas id="skeletonOnlyCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+                        </div>
+
+                        <!-- Movement Data -->
+                        <div id="movementData" class="bg-gray-700 rounded p-3">
+                            <div class="flex justify-between mb-2">
+                                <button id="dataViewDetailed" class="bg-blue-600 px-3 py-1 rounded text-sm active">Detailed</button>
+                                <button id="dataViewSimple" class="bg-gray-600 px-3 py-1 rounded text-sm">Simplified</button>
+                            </div>
+                            <div id="detailedData" class="text-sm">
+                                <p>Waiting for skeleton data...</p>
+                            </div>
+                            <div id="simpleData" class="hidden text-sm">
+                                <p>Waiting for metrics...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="recorder.js"></script>
+    <script src="websocket.js"></script>
+    <script src="skeleton.js"></script>
+</body>
+</html>
