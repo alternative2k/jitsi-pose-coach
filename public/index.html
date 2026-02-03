@@ -123,20 +123,29 @@
             }
         }
 
-        async function saveRecording() {
+async function saveRecording() {
             const blob = new Blob(recordedChunks, { type: 'video/webm' });
             status.textContent = 'Uploading...';
             try {
                 const formData = new FormData();
                 formData.append('video', blob, 'recording.webm');
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
                 const response = await fetch('/upload', {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    signal: controller.signal
                 });
+                clearTimeout(timeoutId);
+                if (!response.ok) throw new Error('Upload failed');
                 const result = await response.json();
                 status.textContent = `Uploaded: ${result.filename}`;
             } catch (error) {
-                status.textContent = 'Upload failed: ' + error.message;
+                if (error.name === 'AbortError') {
+                    status.textContent = 'Upload timed out (file too large)';
+                } else {
+                    status.textContent = 'Upload failed: ' + error.message;
+                }
             }
         }
 
