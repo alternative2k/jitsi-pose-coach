@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Skeleton - Body Tracking</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: system-ui, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            position: relative;
+            width: 640px;
+            max-width: 100%;
+        }
+        video, canvas {
+            width: 100%;
+            border-radius: 8px;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        h1 {
+            margin: 20px 0;
+        }
+        .status {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #888;
+        }
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 4px;
+            background: #4CAF50;
+            color: white;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        button.stop {
+            background: #f44336;
+        }
+        button.stop:hover {
+            background: #da190b;
+        }
+    </style>
+</head>
+<body>
+    <h1>Skeleton</h1>
+    <div class="container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+    <div class="controls">
+        <button id="recordBtn" disabled>Record</button>
+        <button id="stopBtn" class="stop" disabled>Stop</button>
+    </div>
+    <div class="status" id="status">Loading...</div>
+    <a id="downloadLink" style="display:none"></a>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const status = document.getElementById('status');
+        const recordBtn = document.getElementById('recordBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const downloadLink = document.getElementById('downloadLink');
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        function startRecording(stream) {
+            recordedChunks = [];
+            const options = { mimeType: 'video/webm;codecs=vp9,opus' };
+            if (!MediaRecorder.isTypeSupported(options.mimeType)) {
+                options.mimeType = 'video/webm';
+            }
+            mediaRecorder = new MediaRecorder(stream, options);
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+            mediaRecorder.onstop = saveRecording;
+            mediaRecorder.start();
+            recordBtn.disabled = true;
+            stopBtn.disabled = false;
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                recordBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+
+        async function saveRecording() {
+            const blob = new Blob(recordedChunks, { type: 'video/webm' });
+            status.textContent = 'Uploading...';
+            try {
+                const formData = new FormData();
+                formData.append('video', blob, 'recording.webm');
+                const response = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await response.json();
+                status.textContent = `Uploaded: ${result.filename}`;
+            } catch (error) {
+                status.textContent = 'Upload failed: ' + error.message;
+            }
+        }
+
+        recordBtn.addEventListener('click', () => {
+            if (video.srcObject) {
+                startRecording(video.srcObject);
+                status.textContent = 'Recording...';
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            stopRecording();
+        });
+
+        async function setupCamera() {
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: 640, height: 480 }
+            });
+            video.srcObject = stream;
+            return new Promise(resolve => {
+                video.onloadedmetadata = () => {
+                    resolve(video);
+                };
+            });
+        }
+
+        const pose = new window.Pose({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+        });
+
+        pose.setOptions({
+            modelComplexity: 1,
+            smoothLandmarks: true,
+            enableSegmentation: false,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+
+        pose.onResults(onResults);
+
+        function onResults(results) {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            ctx.save();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (results.poseLandmarks) {
+                window.drawConnectors(ctx, results.poseLandmarks, window.POSE_CONNECTIONS, {
+                    color: '#00FF00',
+                    lineWidth: 2
+                });
+                window.drawLandmarks(ctx, results.poseLandmarks, {
+                    color: '#FF0000',
+                    lineWidth: 1,
+                    radius: 3
+                });
+            }
+
+            ctx.restore();
+            status.textContent = 'Tracking active';
+        }
+
+        async function main() {
+            try {
+                status.textContent = 'Accessing camera...';
+                await setupCamera();
+                video.play();
+                recordBtn.disabled = false;
+                status.textContent = 'Starting pose detection...';
+
+                async function detect() {
+                    await pose.send({ image: video });
+                    requestAnimationFrame(detect);
+                }
+
+                detect();
+            } catch (error) {
+                console.error(error);
+                status.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        main();
+    </script>
+</body>
+</html>
