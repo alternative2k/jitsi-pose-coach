@@ -30,4 +30,5 @@ app.post('/upload', upload.single('video'), (req, res) => {
   res.json({ success: true, path: req.file.path, filename: req.file.filename });
 });
 
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+const server = app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+server.setTimeout(120000);
